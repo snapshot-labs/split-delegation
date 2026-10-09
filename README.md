@@ -63,6 +63,19 @@ Split-Delegation takes into account delegations made with the v1 contract, and c
 
 The `api` package is responsible for indexing, computing, caching and exposing each address's delegated voting power. It provides a set of API endpoints that allow you to interact with the delegate registry. It computes `voting power` based on `scores` and `weights` associated with an address.
 
+#### Running
+
+The API is a small [Express](https://expressjs.com) server. It reads the Postgres database the indexer fills from `POSTGRES_PRISMA_URL` and listens on `PORT` (3000 by default).
+
+```sh
+cd packages/api
+yarn install
+yarn build
+yarn start
+```
+
+Call `GET /api/v1/nightly` once a day from a scheduler to prune the cache (it was a Vercel cron at 00:00 UTC).
+
 #### Endpoints
 
 Each endpoint has two identifying components in its path: `space` and `tag`. `Space` defines which snapshot space should be queried (e.g. safe.eth). `Tag` defines a time up to when the query should return. Possible values for `tag` are: a block number, a [viem blocktag](https://github.com/wevm/viem/blob/d946d55b8431b255c4cdc2d20e413f9064e7513a/src/types/block.ts#L86), or 'pin', which returns our cached value that updates every ten minutes. 'Pin' should be used in most cases, to reduce load on the server.

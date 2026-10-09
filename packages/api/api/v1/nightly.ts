@@ -1,6 +1,3 @@
-import { RequestContext } from '@vercel/edge'
-import type { VercelRequest } from '@vercel/node'
-
 import { cachePrune } from '../../src/loaders/cache'
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -10,7 +7,10 @@ const actions = async () => {
   await cachePrune(oneDayAgo())
 }
 
-export const GET = async (req: VercelRequest, context: RequestContext) => {
+export const GET = async (
+  req: Request,
+  context: { waitUntil: (promise: Promise<unknown>) => void }
+) => {
   context.waitUntil(actions())
 
   return new Response('Syncing...')
