@@ -242,6 +242,17 @@ Note
 - _**Weight**_ - value given to an address based on delegations made to that address.
 - _**Voting Power**_ - computed value given to an address using `score * weight`
 
+### Indexer
+
+The `indexer` package reads the registry events on Ethereum and Gnosis with `eth_getLogs` and writes them to the Postgres database at `POSTGRES_PRISMA_URL`, resuming from the last block it stored. It uses `https://rpc.snapshot.org/1` and `https://rpc.snapshot.org/100`; set `ETH_RPC_URL` or `GNOSIS_RPC_URL` to use another RPC, which must serve `eth_getLogs` over 1,000 blocks on Ethereum and 10,000 on Gnosis. Its progress is served on `/metrics`, port 3000 for Ethereum and 3001 for Gnosis.
+
+```sh
+cd packages/indexer
+pnpm install
+pnpm build
+pnpm start
+```
+
 ### EVM
 
 The `evm` package contains the Ethereum Virtual Machine (EVM) contracts for the delegate registry. These contracts are written in Solidity and can be deployed to any EVM-compatible blockchain. The package also includes a Hardhat configuration for compiling the contracts and running tests, as well as scripts for deploying the contracts and interacting with them on a blockchain.

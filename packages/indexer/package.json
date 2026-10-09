@@ -15,7 +15,6 @@
     "postinstall": "prisma generate"
   },
   "devDependencies": {
-    "@subsquid/cli": "3.0.4",
     "@tsconfig/node21": "^21.0.4",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.14.0",
@@ -28,7 +27,6 @@
   },
   "dependencies": {
     "@prisma/client": "6.5.0",
-    "@subsquid/evm-processor": "1.27.1",
     "dotenv": "^16.4.7",
     "prisma": "6.5.0",
     "viem": "^2.25.0"
