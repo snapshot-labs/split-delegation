@@ -244,7 +244,7 @@ Note
 
 ### Indexer
 
-The `indexer` package reads the registry events on Ethereum and Gnosis with `eth_getLogs` and writes them to the Postgres database at `POSTGRES_PRISMA_URL`, resuming from the last block it stored. It uses `https://rpc.snapshot.org/1` and `https://rpc.snapshot.org/100`; set `ETH_RPC_URL` or `GNOSIS_RPC_URL` to use another RPC, which must serve `eth_getLogs` over 1,000 blocks on Ethereum and 10,000 on Gnosis.
+The `indexer` package reads the registry events on Ethereum and Gnosis with `eth_getLogs` and writes them to the Postgres database at `POSTGRES_PRISMA_URL`, resuming from the last block it stored. It uses `https://rpc.snapshot.org/1` and `https://rpc.snapshot.org/100`; set `ETH_RPC_URL` or `GNOSIS_RPC_URL` to use another RPC, which must serve `eth_getLogs` over 1,000 blocks on Ethereum and 10,000 on Gnosis. Its progress is served on `/metrics`, port 3000 for Ethereum and 3001 for Gnosis.
 
 ```sh
 cd packages/indexer
