@@ -1,11 +1,11 @@
 import { ChainConfig } from './types'
 
 export default {
-  gateway: 'https://v2.archive.subsquid.io/network/gnosis-mainnet',
-  rpc: 'https://airlock.gnosisguild.org/api/v1/100/rpc',
+  rpc: process.env.GNOSIS_RPC_URL || 'https://rpc.snapshot.org/100',
   chainId: 100,
   shortName: 'gno',
   finality: 20,
+  blockRange: 10000,
 
   deploymentBlocks: {
     DelegateRegistryV1: 20274491,

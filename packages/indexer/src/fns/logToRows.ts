@@ -6,14 +6,20 @@ import {
   Hash,
   Hex,
   keccak256,
+  Log,
   pad,
   toHex,
 } from 'viem'
-import { BlockData } from '@subsquid/evm-processor'
 import { DelegationEvent } from '@prisma/client'
 
 import { decodeLog } from './decodeLog'
 import { ChainId } from '../chains/types'
+
+/** The logs of one block and its timestamp in ms, the shape Subsquid gave */
+interface BlockData {
+  header: { height: number; timestamp: number }
+  logs: Log[]
+}
 
 export function blockDataToRows(
   chainId: ChainId,

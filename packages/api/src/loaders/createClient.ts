@@ -4,7 +4,7 @@ import { Chain, PublicClient, createPublicClient, http } from 'viem'
 config()
 
 export default function (chain: Chain): PublicClient {
-  const url = `https://airlock.gnosisguild.org/api/v1/${chain.id}/rpc`
+  const url = `https://rpc.snapshot.org/${chain.id}`
 
   return createPublicClient({
     chain,
