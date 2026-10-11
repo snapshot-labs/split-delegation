@@ -1,0 +1,62 @@
+# DigitalOcean App Platform spec, see DEPLOY.md
+name: split-delegation
+region: nyc
+envs:
+# read by the API and the indexer; replace before deploying
+- key: POSTGRES_PRISMA_URL
+  scope: RUN_TIME
+  type: SECRET
+  value: postgresql://USERNAME:PASSWORD@HOST:5432/postgres?sslmode=require
+services:
+- name: api
+  github:
+    repo: snapshot-labs/split-delegation
+    branch: main
+    deploy_on_push: true
+  source_dir: packages/api
+  environment_slug: node-js
+  build_command: yarn build
+  run_command: yarn start
+  http_port: 8080
+  instance_size_slug: apps-s-1vcpu-1gb-fixed
+  instance_count: 1
+ingress:
+  rules:
+  - component:
+      name: api
+    match:
+      path:
+        prefix: /
+workers:
+# applies the Prisma migrations, then syncs
+- name: indexer
+  github:
+    repo: snapshot-labs/split-delegation
+    branch: main
+    deploy_on_push: true
+  source_dir: packages/indexer
+  environment_slug: node-js
+  build_command: pnpm build
+  run_command: pnpm start
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  instance_count: 1
+jobs:
+# prunes the API cache daily, as the Vercel cron did
+- name: nightly
+  kind: SCHEDULED
+  schedule:
+    cron: 0 0 * * *
+    time_zone: UTC
+  github:
+    repo: snapshot-labs/split-delegation
+    branch: main
+    deploy_on_push: true
+  source_dir: packages/api
+  environment_slug: node-js
+  run_command: node -e "fetch(process.env.APP_URL + '/api/v1/nightly').then((r) => console.log('nightly', r.status))"
+  envs:
+  - key: APP_URL
+    scope: RUN_TIME
+    value: ${APP_URL}
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  instance_count: 1
