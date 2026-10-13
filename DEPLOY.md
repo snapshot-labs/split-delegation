@@ -1,16 +1,18 @@
 # Deploy on DigitalOcean App Platform
 
-One app with three components, all built from this repository by App Platform's Node.js buildpack. The spec is [.do/app.yaml](.do/app.yaml).
+One app with two components, built from this repository.
 
-| Component | Type | Source directory | Build | Run | Size |
-| --- | --- | --- | --- | --- | --- |
-| api | Web service, port 8080 | `packages/api` | `yarn build` | `yarn start` | `apps-s-1vcpu-1gb-fixed`, $10/month |
-| indexer | Worker | `packages/indexer` | `pnpm build` | `pnpm start` | `apps-s-1vcpu-0.5gb`, $5/month |
-| nightly | Job, daily at 00:00 UTC | `packages/api` | | calls `GET /api/v1/nightly` | `apps-s-1vcpu-0.5gb`, billed only while it runs |
+| Component | Type | Build | Run | Size |
+| --- | --- | --- | --- | --- |
+| api | Web service, port 8080 | [Dockerfile](Dockerfile) | the API and the indexer, see [start.js](start.js) | `apps-s-1vcpu-1gb-fixed`, $10/month |
+| nightly | Job, daily at 00:00 UTC | App Platform's Bun buildpack, from `packages/api` | calls `GET /api/v1/nightly` | `apps-s-1vcpu-0.5gb`, billed only while it runs |
 
-- `pnpm start` applies the Prisma migrations (`prisma migrate deploy`), then syncs. Nothing else runs migrations.
+- The API and the indexer run side by side, each with its own `bun run start` in its package, as when they were separate components:
+  - The indexer applies the Prisma migrations (`prisma migrate deploy`), then syncs. Nothing else runs migrations.
+  - When the indexer exits, it is restarted after 10 s, doubling up to 5 min, and the API keeps serving.
+  - When the API exits, the indexer is stopped and the component restarts.
 - The API is checked on its TCP port. Its only GET route, `/api/v1/nightly`, prunes the cache, so it is not a health check.
-- In tests the API peaked at about 530 MB and the indexer at about 140 MB. Move a component one size up if it restarts out of memory.
+- In tests the API peaked at about 530 MB and the indexer at about 140 MB, about 670 MB together on the 1 GB instance. Move the component one size up if it restarts out of memory.
 
 ## Database
 
@@ -24,10 +26,12 @@ Use port 5432: Prisma migrations need a direct connection, not PgBouncer (6432).
 
 ## Create the app
 
-1. In App Platform, create an app from GitHub: `snapshot-labs/split-delegation`, branch `main`, source directory `/packages/api`, region New York. From the repository root, App Platform finds no package and offers a Function.
-2. Once it is created, open Settings, App Spec, Edit. Paste `.do/app.yaml` with the real `POSTGRES_PRISMA_URL` and save. App Platform encrypts the secret and redeploys.
-
-With doctl: `doctl apps create --spec .do/app.yaml`, after setting the value.
+1. In App Platform, create an app from GitHub: `snapshot-labs/split-delegation`, branch `main`, autodeploy on, source directory `/`, region New York. App Platform builds it from the root `Dockerfile`.
+2. Name the web service `api`, with HTTP port 8080 and size `apps-s-1vcpu-1gb-fixed`, 1 instance.
+3. In the app's settings, add the environment variable `POSTGRES_PRISMA_URL`, encrypted, scope run time.
+4. Add a job named `nightly`, from the same repository and branch, source directory `/packages/api`, scheduled `0 0 * * *` UTC, size `apps-s-1vcpu-0.5gb`, with:
+   - Run command: `node -e "fetch(process.env.APP_URL + '/api/v1/nightly').then((r) => console.log('nightly', r.status))"`
+   - Environment variable `APP_URL`, scope run time, value `${APP_URL}`
 
 ## First sync
 
@@ -43,9 +47,19 @@ pg_restore --no-owner --no-privileges -d "$POSTGRES_PRISMA_URL" seed.dump
 
 ## Check
 
-- Indexer: in the Console tab of the indexer, `curl -s localhost:3000/metrics` for Ethereum and `curl -s localhost:3001/metrics` for Gnosis. It has caught up when `sqd_processor_last_block` equals `sqd_processor_chain_height`.
+- Indexer: in the Console tab of the api, `curl -s localhost:3000/metrics` for Ethereum and `curl -s localhost:3001/metrics` for Gnosis. It has caught up when `sqd_processor_last_block` equals `sqd_processor_chain_height`.
 - API: `POST /api/v1/<space>/<block>/voting-power` with a split-delegation strategy and addresses, as in the [README](README.md).
 - Nightly job: its runs are listed under Activity, Jobs, and each logs `nightly 200`.
+- Restarts: when the indexer exits, the api's runtime logs show `indexer exited with …, restarting in …s`.
+
+## Run elsewhere
+
+The same image runs anywhere Docker does:
+
+```sh
+docker build -t split-delegation .
+docker run -e POSTGRES_PRISMA_URL="$POSTGRES_PRISMA_URL" -p 8080:8080 split-delegation
+```
 
 ## Point spaces at it
 

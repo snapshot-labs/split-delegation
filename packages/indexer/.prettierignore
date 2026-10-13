@@ -1,4 +1,4 @@
 node_modules
-pnpm-lock.yaml
+bun.lock
 package.json
 cspell.json

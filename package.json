@@ -1,0 +1,10 @@
+{
+  "name": "split-delegation",
+  "private": true,
+  "license": "LGPL-3.0+",
+  "scripts": {
+    "build": "cd packages/api && bun install --frozen-lockfile && bun run build && cd ../indexer && bun install --frozen-lockfile && bun run build",
+    "start": "node start.js"
+  },
+  "packageManager": "bun@1.4.0"
+}

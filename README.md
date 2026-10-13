@@ -59,22 +59,33 @@ Split-Delegation takes into account delegations made with the v1 contract, and c
 
 ## Packages
 
+The API and the indexer can run on one server, each in its own process as described below. From the repository root:
+
+```sh
+bun run build
+bun run start
+```
+
+The API then listens on `PORT`, 8080 by default, and the indexer serves its progress on ports 3000 and 3001. When the indexer exits, it is restarted; when the API exits, both stop. The [Dockerfile](Dockerfile) does the same, and [DEPLOY.md](DEPLOY.md) deploys it.
+
+Each package runs its tests with `bun run test`.
+
 ### API
 
-The `api` package is responsible for indexing, computing, caching and exposing each address's delegated voting power. It provides a set of API endpoints that allow you to interact with the delegate registry. It computes `voting power` based on `scores` and `weights` associated with an address.
+The `api` package is responsible for computing, caching and exposing each address's delegated voting power. It provides a set of API endpoints that allow you to interact with the delegate registry. It computes `voting power` based on `scores` and `weights` associated with an address.
 
 #### Running
 
-The API is a small [Express](https://expressjs.com) server. It reads the Postgres database the indexer fills from `POSTGRES_PRISMA_URL` and listens on `PORT` (3000 by default).
+The API is a small [Express](https://expressjs.com) server. It reads the Postgres database the indexer fills from `POSTGRES_PRISMA_URL` and listens on `PORT` (3000 by default, which is also the indexer's Ethereum `/metrics` port: set `PORT` to run both on one machine, or start them from the repository root).
 
 ```sh
 cd packages/api
-yarn install
-yarn build
-yarn start
+bun install
+bun run build
+bun run start
 ```
 
-Call `GET /api/v1/nightly` once a day from a scheduler to prune the cache (it was a Vercel cron at 00:00 UTC).
+Call `GET /api/v1/nightly` once a day from a scheduler to prune the cache. [DEPLOY.md](DEPLOY.md) runs it as a job at 00:00 UTC.
 
 #### Endpoints
 
@@ -90,7 +101,7 @@ Note
 - Query params:
   - `limit` - `number` - used for pagination, defaults to 100
   - `offset` - `number` - used for pagination, defaults to 0
-  - `orderBy` - _required_ - must be either `power` or `count`. `Power` returns delegates sorted by voting power descending; `count` returns delegates sorted by amount of delegations descending.
+  - `by` - _required_ - must be either `power` or `count`. `Power` returns delegates sorted by voting power descending; `count` returns delegates sorted by amount of delegations descending.
 - Request body must contain a [valid split-delegation strategy](https://github.com/gnosisguild/split-delegation/blob/10ab7e91d87482a4d58d42d32ad777bc0cc476cb/packages/api/api/v1/types.ts#L14):
   ```
     {
@@ -126,7 +137,12 @@ Note
         "votingPower": 21.41231,
         "percentOfVotingPower": 211
       }...
-    ]
+    ],
+    "pagination": {
+      "offset": 0,
+      "limit": 100,
+      "total": 1
+    }
   }
   ```
 
@@ -248,11 +264,18 @@ The `indexer` package reads the registry events on Ethereum and Gnosis with `eth
 
 ```sh
 cd packages/indexer
-pnpm install
-pnpm build
-pnpm start
+bun install
+bun run build
+bun run start
 ```
 
 ### EVM
 
 The `evm` package contains the Ethereum Virtual Machine (EVM) contracts for the delegate registry. These contracts are written in Solidity and can be deployed to any EVM-compatible blockchain. The package also includes a Hardhat configuration for compiling the contracts and running tests, as well as scripts for deploying the contracts and interacting with them on a blockchain.
+
+```sh
+cd packages/evm
+bun install
+bun run build
+bun run test
+```
