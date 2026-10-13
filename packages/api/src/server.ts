@@ -47,7 +47,7 @@ function handle(handler: Handler): RequestHandler {
     }
 
     const response = await handler(
-      new Request(url, {
+      new Request(url.href, {
         method: req.method,
         headers: req.headers as Record<string, string>,
         body: req.body,

@@ -59,6 +59,15 @@ Split-Delegation takes into account delegations made with the v1 contract, and c
 
 ## Packages
 
+The API and the indexer can run on one server, each in its own process as described below. From the repository root:
+
+```sh
+bun run build
+bun run start
+```
+
+The API then listens on `PORT`, 8080 by default. The [Dockerfile](Dockerfile) does the same, and [DEPLOY.md](DEPLOY.md) deploys it.
+
 ### API
 
 The `api` package is responsible for indexing, computing, caching and exposing each address's delegated voting power. It provides a set of API endpoints that allow you to interact with the delegate registry. It computes `voting power` based on `scores` and `weights` associated with an address.
@@ -69,9 +78,9 @@ The API is a small [Express](https://expressjs.com) server. It reads the Postgre
 
 ```sh
 cd packages/api
-yarn install
-yarn build
-yarn start
+bun install
+bun run build
+bun run start
 ```
 
 Call `GET /api/v1/nightly` once a day from a scheduler to prune the cache (it was a Vercel cron at 00:00 UTC).
@@ -248,9 +257,9 @@ The `indexer` package reads the registry events on Ethereum and Gnosis with `eth
 
 ```sh
 cd packages/indexer
-pnpm install
-pnpm build
-pnpm start
+bun install
+bun run build
+bun run start
 ```
 
 ### EVM

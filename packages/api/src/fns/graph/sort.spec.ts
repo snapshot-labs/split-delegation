@@ -1,4 +1,4 @@
-import { describe, test } from '@jest/globals'
+import { describe, expect, test } from 'bun:test'
 
 import kahn from './sort'
 
