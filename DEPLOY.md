@@ -12,7 +12,7 @@ One app with two components, built from this repository.
   - When the indexer exits, it is restarted after 10 s, doubling up to 5 min, and the API keeps serving.
   - When the API exits, the indexer is stopped and the component restarts.
 - The API is checked on its TCP port. Its only GET route, `/api/v1/nightly`, prunes the cache, so it is not a health check.
-- In tests the API peaked at about 530 MB and the indexer at about 140 MB. Move the component one size up if it restarts out of memory.
+- In tests the API peaked at about 530 MB and the indexer at about 140 MB, about 670 MB together on the 1 GB instance. Move the component one size up if it restarts out of memory.
 
 ## Database
 
@@ -50,6 +50,16 @@ pg_restore --no-owner --no-privileges -d "$POSTGRES_PRISMA_URL" seed.dump
 - Indexer: in the Console tab of the api, `curl -s localhost:3000/metrics` for Ethereum and `curl -s localhost:3001/metrics` for Gnosis. It has caught up when `sqd_processor_last_block` equals `sqd_processor_chain_height`.
 - API: `POST /api/v1/<space>/<block>/voting-power` with a split-delegation strategy and addresses, as in the [README](README.md).
 - Nightly job: its runs are listed under Activity, Jobs, and each logs `nightly 200`.
+- Restarts: when the indexer exits, the api's runtime logs show `indexer exited with …, restarting in …s`.
+
+## Run elsewhere
+
+The same image runs anywhere Docker does:
+
+```sh
+docker build -t split-delegation .
+docker run -e POSTGRES_PRISMA_URL="$POSTGRES_PRISMA_URL" -p 8080:8080 split-delegation
+```
 
 ## Point spaces at it
 
